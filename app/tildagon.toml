@@ -1,0 +1,13 @@
+[app]
+name = "WiFi(nd) My Friends"
+category = "Apps"
+
+[entry]
+class = "WiFindMyFriendsApp"
+
+[metadata]
+author = "tomdalby"
+license = "MIT"
+url = "https://github.com/thomasjackdalby/wi-find-my-friends"
+description = "Locate your newly aquired EMF friends, using the not-so-precise WPS (WiFi Positioning System)"
+version = "1.0.0"
