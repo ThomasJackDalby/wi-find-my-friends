@@ -1,29 +1,41 @@
 from uuid import UUID
 import pydantic
 
-class DeviceInfoResponseSchema(pydantic.BaseModel):
+class DeviceSummaryInfoResponseSchema(pydantic.BaseModel):
     id: int
     name: str
 
-class DeviceRegisterRequestSchema(pydantic.BaseModel):
+class DeviceDetailedInfoResponseSchema(pydantic.BaseModel):
+    id: int
     name: str
-    token: str
+    locations: list["DeviceLocationSchema"]
 
-class DeviceRegisterResponseSchema(pydantic.BaseModel):
-    id: int
-
-class SignalSchema(pydantic.BaseModel):
-    id: int
-    rrsi: float
+class DeviceLocationSchema(pydantic.BaseModel):
+    x: float | None
+    y: float | None
+    signals: list["SignalSchema"]
 
 class PostUpdateRequestSchema(pydantic.BaseModel):
+    id: int | None
+    name: str
     token: str
-    signals: list[SignalSchema]
+    signals: list["SignalSchema"]
 
-
-class AccessPointResponseSchema(pydantic.BaseModel):
-    id: int
-    ssid: str
+class SignalSchema(pydantic.BaseModel):
     bssid: str
-    position_x: float
-    position_y: float
+    ssid: str
+    rssi: float
+
+class AccessPointInfoResponseSchema(pydantic.BaseModel):
+    id: int
+    name: str | None
+    ssid: str | None
+    bssid: str
+    position_x: float | None
+    position_y: float | None
+
+class AccessPointEditRequestSchema(pydantic.BaseModel):
+    name: str | None
+    ssid: str | None
+    position_x: float | None
+    position_y: float | None

@@ -13,15 +13,16 @@ from data import DataBaseSession
 import uvicorn
 import asyncio
 from constants import MASTER_API_TOKEN
-from model import (
-    DeviceLocation
-)
+from utils import estimate_location
+
 from schemas import (
-    DeviceRegisterRequestSchema,
-    DeviceRegisterResponseSchema,
+    DeviceSummaryInfoResponseSchema,
+    DeviceDetailedInfoResponseSchema,
+    DeviceLocationSchema,
+    SignalSchema,
     PostUpdateRequestSchema,
-    DeviceInfoResponseSchema,
-    AccessPointResponseSchema
+    AccessPointInfoResponseSchema,
+    AccessPointEditRequestSchema,
     )
 
 logger = logging.getLogger("wifind-my-friends")
@@ -36,76 +37,94 @@ authenticated = fastapi.APIRouter(prefix="/api", dependencies=[fastapi.Depends(g
 # /devices 
 
 @public.get("/devices", status_code=200)
-def get_devices(name: str | None = None) -> list[DeviceInfoResponseSchema]:
+def get_devices() -> list[DeviceSummaryInfoResponseSchema]:
     with DataBaseSession() as db:
-        if name is None:
-            return [DeviceInfoResponseSchema(
+            return [DeviceSummaryInfoResponseSchema(
                 id = device.id,
                 name = device.name
             ) for device in db.get_devices()]
-        
-        device = db.get_device_with_name(name)
-        if device is not None: 
-            return [DeviceInfoResponseSchema(
-                id = device.id,
-                name = device.name
-            )]
-        return []
 
-@public.post("/devices", status_code=201)
-def post_register(request: DeviceRegisterRequestSchema) -> DeviceRegisterResponseSchema:
+@public.get("/devices/{device_id:int}", status_code=200)
+def get_device_location(device_id: int) -> DeviceDetailedInfoResponseSchema:
+
+    device = db.get_device_with_id(device_id)
+    if device is None: 
+        raise fastapi.HTTPException(404, f"No device with id '{device_id}'.")
+
+    return DeviceDetailedInfoResponseSchema(
+        id=device_id,
+        name=device.name,
+        locations=[DeviceLocationSchema(
+                x=loc.position_x,
+                y=loc.position_y,
+                signals = [SignalSchema(
+                    bssid=signal.access_point.bssid,
+                    rssi=signal.rssi
+                ) for signal in loc.access_point_signals]
+        ) for loc in device.locations]
+    )
+
+@public.get("/access-points", status_code=201)
+def get_access_points():
+        with DataBaseSession() as db:
+            return [AccessPointInfoResponseSchema(
+                id = access_point.id,
+                name = access_point.name,
+                ssid = access_point.ssid,
+                bssid = access_point.bssid,
+                position_x = access_point.position_x,
+                position_y = access_point.position_y,
+            ) for access_point in db.get_access_points()]
+
+@public.put("/access-points/{access_point_id: int}", status_code=201)
+def put_access_points(access_point_id: int, request: AccessPointEditRequestSchema):
+        with DataBaseSession() as db:
+            access_point = db.get_access_point_with_id(access_point_id)
+            if access_point is None: raise fastapi.HTTPException(400, f"No access_points found with id [{access_point_id}]'.")
+            if request.name is not None: access_point.name = request.name
+            if request.ssid is not None: access_point.ssid = request.ssid
+            if request.position_x is not None: access_point.position_x = request.position_x
+            if request.position_y is not None: access_point.position_x = request.position_y
+            db._session.commit()
+
+@public.post("/update", status_code=201)
+def post_update(request: PostUpdateRequestSchema):
     with DataBaseSession() as db:
-        device = db.add_device(request.name, request.token)
-        if device is None: raise fastapi.HTTPException(status_code=500, detail=f"Unable to add device to the database.")
-        return DeviceRegisterResponseSchema(
-            id = device.id,
-        )
 
-# /device/locations
+        device = None
+        if request.id is not None: device = db.get_device_with_id(request.id)
+        else: device = db.get_device_with_token(request.token)
 
-@public.get("/devices/{device_id:int}/locations", status_code=201)
-def get_device_location(device_id: int):
-    return {
-        "id" : device_id,
-        "name" : "Solan",
-        "pos_x" : 123,
-        "pos_y" : 456,
-        "desc" : "Near the Robot Arms"
-    }
+        with DataBaseSession() as db:
+            if device is None:
+                print(f"No device with provided id or token. Adding new device [{request.name}].")
+                device = db.add_device(request.name, request.token)
+                if device is None: raise fastapi.HTTPException(status_code=500, detail=f"Unable to add device to the database.")
+            if device.token != request.token: raise fastapi.HTTPException(400, f"Invalid token for device with id [{device.id}]'.")
 
+            location = db.add_device_location(device.id)
+            if location is None: print("Unable to add device_location.")
+            else:
+                signals = []
+                for signal in request.signals:
+                    access_point = db.get_access_point_with_bssid(signal.bssid)
+                    if access_point is None: access_point = db.add_access_point(signal.bssid, signal.ssid)
+                    db.add_access_point_signal(location.id, access_point.id, signal.rssi)
 
-@public.post("/devices/{device_id:int}/locations", status_code=201)
-def post_update(
-        device_id: int,
-        request: PostUpdateRequestSchema):
-    with DataBaseSession() as db:
-        device = db.get_device_with_id(device_id)
-        if device is None:
-            raise fastapi.HTTPException(404, f"No device with id '{device_id}'.")
+                    if access_point.position_x is not None and access_point.position_y is not None:
+                        signals.append((access_point.position_x, access_point.position_y, signal.rssi))
+            
+                if len(signals) >= 3:
+                    print("Evaluating device position.")
+                    result = estimate_location(signals)
+                    print(result)
+                    location.position_x = result[0]
+                    location.position_y = result[1]
+                else:
+                    print("Not enough signals to triangulate...")
+                     
 
-        if device.token != request.token:
-            raise fastapi.HTTPException(400, f"Incorrect token provided with request.")
-
-        # need to calculate the location based on the rssi signals
-        # device_location = DeviceLocation(
-
-        # )
-
-# /anchors
-
-# @public.get("/anchors", status_code=200)
-# def get_devices(name: str | None) -> list[AccessPointResponseSchema]:
-#     with DataBaseSession() as db:
-#         if name is None:
-#             return [AccessPointResponseSchema(
-#                 id = anchor.id,
-#                 name = anchor.name
-#             ) for anchor in db.get_anchors()]
-#         return anchor
-
-# @public.post("anchors/{device_id:int}/locations", status_code=201)
-# def post_update(
-# add_reference_device
+        return device.id
 
 app = fastapi.FastAPI()
 app.include_router(public)

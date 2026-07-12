@@ -10,7 +10,7 @@ import string
 import random
 from sqlalchemy import select
 from typing import Optional
-from model import Base, Device, DeviceLocation, AccessPoint
+from model import Base, Device, DeviceLocation, AccessPoint, AccessPointSignal
 
 logger = logging.getLogger("wifind-my-friends")
 
@@ -74,46 +74,67 @@ class DataBaseSession:
         self._session.commit()
         return device
     
-    # def add_device_location(self,
-    #         device_id: id,
+    # -- Device Locations
 
-    #         ):
-    #     device_location = DeviceLocation(
-    #         device_id = device_id,
+    def get_device_location_with_id(self, device_location_id: int) -> DeviceLocation | None:
+        return self._session.scalars(select(DeviceLocation)
+            .where(DeviceLocation.id == device_location_id)).first()
 
+    def add_device_location(self, device_id: int) -> DeviceLocation | None:
+        device = self.get_device_with_id(device_id)
+        if device is None: return
+        device_location = DeviceLocation(
+            device_id = device_id,
+            date_time = datetime.datetime.now(),
+        )
+        self._session.add(device_location)
+        self._session.commit()
+        return device_location
 
-    # -- Reference Devices
+    def add_access_point_signal(self, device_location_id: int, access_point_id: int, rssi: float):
+        device_location = self.get_device_location_with_id(device_location_id)
+        if device_location is None: 
+            print(f"No device_location with id [{device_location_id}].")
+            return
+
+        access_point = self.get_access_point_with_id(access_point_id)
+        if access_point is None: 
+            print(f"No access_point with id [{access_point_id}].")
+            return
+        
+        access_point_signal = AccessPointSignal(
+            access_point_id = access_point_id,
+            device_location_id = device_location_id,
+            rssi = rssi
+        )
+        self._session.add(access_point_signal)
+        self._session.commit()
+        return access_point_signal
+
+    # -- Access Points
 
     def get_access_points(self) -> list[AccessPoint]:
-        return self._session.scalars(select(AccessPoint)).all()
+        return list(self._session.scalars(select(AccessPoint)).all())
 
-    def get_access_point_with_id(self, id: int) -> Device | None:
+    def get_access_point_with_id(self, id: int) -> AccessPoint | None:
         return self._session.scalars(select(AccessPoint)
             .where(AccessPoint.id == id)).first()
     
-    def get_access_points_with_ssid(self, ssid: str) -> Device | None:
-        return self._session.scalars(select(AccessPoint)
-            .where(AccessPoint.ssid == ssid)).all()
+    def get_access_points_with_ssid(self, ssid: str) -> list[AccessPoint]:
+        return list(self._session.scalars(select(AccessPoint)
+            .where(AccessPoint.ssid == ssid)).all())
     
-    def get_access_point_with_bssid(self, bssid: str) -> Device | None:
+    def get_access_point_with_bssid(self, bssid: str) -> AccessPoint | None:
         return self._session.scalars(select(AccessPoint)
             .where(AccessPoint.bssid == bssid)).first()
     
-    def add_access_point(self,
-            bssid: str,
-            ssid: str,
-            position_x: float, 
-            position_y: float):
-        
+    def add_access_point(self, bssid: str, ssid: str) -> AccessPoint:
         access_point = self.get_access_point_with_bssid(bssid)
-        if access_point is not None:
-            return access_point
+        if access_point is not None: return access_point
 
         access_point = AccessPoint(
-            ssid=ssid,
             bssid=bssid,
-            position_x=position_x,
-            position_y=position_y,
+            ssid=ssid,
             )
         self._session.add(access_point)
         self._session.commit()

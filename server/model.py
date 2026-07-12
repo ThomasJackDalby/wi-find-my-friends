@@ -11,21 +11,24 @@ class Device(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(32))
     token: Mapped[str] = mapped_column(String(32))
+    
+    locations: Mapped[list["DeviceLocation"]] = relationship(back_populates="device")
 
 class AccessPoint(Base):
-    __tablename__ = "reference_devices"
+    __tablename__ = "access_points"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name = mapped_column(String(32))
     ssid = mapped_column(String(32))
     bssid = mapped_column(String(32))
-    position_x = mapped_column(Float)
-    position_y = mapped_column(Float)
+    position_x = mapped_column(Float, nullable=True)
+    position_y = mapped_column(Float, nullable=True)
 
 class AccessPointSignal(Base):
-    __tablename__ = "reference_signals"
+    __tablename__ = "access_point_signals"
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("reference_devices.id"))
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"))
     device_location_id: Mapped[int] = mapped_column(ForeignKey("device_locations.id"))
     rssi: Mapped[float] = mapped_column(Float)
 
@@ -38,10 +41,10 @@ class DeviceLocation(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"))
     date_time: Mapped[datetime] = mapped_column(DateTime)
-    position_x = mapped_column(Float)
-    position_y = mapped_column(Float)
-    cell_x = mapped_column(Integer)
-    cell_y = mapped_column(Integer)
+    position_x = mapped_column(Float, nullable=True)
+    position_y = mapped_column(Float, nullable=True)
+    cell_x = mapped_column(Integer, nullable=True)
+    cell_y = mapped_column(Integer, nullable=True)
 
-    device: Mapped["Device"] = relationship()
+    device: Mapped["Device"] = relationship(back_populates="locations")
     access_point_signals: Mapped[list["AccessPointSignal"]] = relationship(back_populates="device_location")
