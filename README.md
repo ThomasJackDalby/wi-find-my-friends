@@ -1,4 +1,3 @@
 # WiFi<sup>nd</sup> My Friends
 
-The WiFi<sup>nd</sup> My Friends app uses WiFi RSSI and known static APs at EMF to triangulate badge positions. Badges upload their position at 1 minute intervals, which allows other badges to query the last known "approximate" location of other badges.
-
+The 'WiFi<sup>nd</sup> My Friends' app uses WiFi as an approximate WPS (WiFi Positioning System). The app scans nearby WiFI networks and uses the RSSI values for network SSIDs that are known to have static access points (APs). If enough APs are detected in a scan, the badges position can be triangulated.
