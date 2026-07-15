@@ -12,8 +12,6 @@ def estimate_location(signals: list[tuple[float, float, float]]) -> tuple[float,
     """
     anchors = np.array([[s[0], s[1]] for s in signals])
 
-
-
     def localization_loss(position, anchors, measured_distances):
         hypothesized_distances = np.linalg.norm(anchors - position, axis=1)
         residuals = hypothesized_distances - measured_distances
