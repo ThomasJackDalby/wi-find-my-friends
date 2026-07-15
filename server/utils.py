@@ -7,7 +7,12 @@ from scipy.optimize import minimize
 #     return min(MAX_RANGE_M, 10.0 ** ((TX_POWER - rssi) / (10.0 * PATH_LOSS_N)))
 
 def estimate_location(signals: list[tuple[float, float, float]]) -> tuple[float, float]:
+    """
+    
+    """
     anchors = np.array([[s[0], s[1]] for s in signals])
+
+
 
     def localization_loss(position, anchors, measured_distances):
         hypothesized_distances = np.linalg.norm(anchors - position, axis=1)

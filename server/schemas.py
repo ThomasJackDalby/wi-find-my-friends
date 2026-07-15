@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime
 import pydantic
 
 class DeviceSummaryInfoResponseSchema(pydantic.BaseModel):
@@ -13,6 +14,7 @@ class DeviceDetailedInfoResponseSchema(pydantic.BaseModel):
 class DeviceLocationSchema(pydantic.BaseModel):
     x: float | None
     y: float | None
+    date_time: datetime
     signals: list["SignalSchema"]
 
 class PostUpdateRequestSchema(pydantic.BaseModel):
