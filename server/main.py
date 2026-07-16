@@ -157,10 +157,14 @@ def synchronise_config_server_url():
 
     if remote_url != local_url:
         print(f"URL mismatch [{remote_url}] vs [{local_url}]. Attempting to update...")
-        user_folder_path = os.path.expanduser('~')
-        repo_folder_path = os.path.join(user_folder_path, "repos", "config")
         try:
+            # create the target folder
+            user_folder_path = os.path.expanduser('~')
+            repos_folder_path = os.path.join(user_folder_path, "repos")
+            os.mkdir(repos_folder_path)
+
             # clone the repo
+            repo_folder_path = os.path.join(repos_folder_path, "config")
             subprocess.run(f"git clone {CONFIG_GIT_REPO_URL} {repo_folder_path}")
 
             # update the config file contained
