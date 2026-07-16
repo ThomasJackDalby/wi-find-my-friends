@@ -140,8 +140,6 @@ app.add_middleware(
 # TODO: No static files yet.
 # app.mount("/", fastapi.staticfiles.StaticFiles(directory="static", html = True), name="static")
 
-
-
 KEY_SERVER_URL = "server_url"
 KEY_SSID_FILTER = "ssid_filter"
 KEY_SCAN_INTERVAL = "scan_interval"
