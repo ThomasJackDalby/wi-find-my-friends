@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 from data import DataBaseSession
 import uvicorn
 import asyncio
-from constants import MASTER_API_TOKEN
 from utils import estimate_location, get_local_ip
 
 from schemas import (
@@ -34,12 +33,7 @@ PORT = 8000
 
 logger = logging.getLogger("wifind-my-friends")
 
-def get_auth_user(token: str = fastapi.Depends(fastapi.security.APIKeyHeader(name="token"))):
-    logger.debug(f"token: {token} vs {MASTER_API_TOKEN}")
-    return token == MASTER_API_TOKEN
-
 public = fastapi.APIRouter(prefix="/api")
-authenticated = fastapi.APIRouter(prefix="/api", dependencies=[fastapi.Depends(get_auth_user)])
 
 # /devices 
 
