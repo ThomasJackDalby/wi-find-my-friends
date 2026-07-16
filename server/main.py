@@ -129,7 +129,6 @@ def post_update(request: PostUpdateRequestSchema):
 
 app = fastapi.FastAPI()
 app.include_router(public)
-app.include_router(authenticated)
 app.add_middleware(
     fastapi.middleware.cors.CORSMiddleware,
     allow_origins=["*"],
