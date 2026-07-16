@@ -361,8 +361,6 @@ class LoadingGraphic:
         ctx.font_size = 20
         ctx.move_to(0, 0).text(self.text)
 
-# "url" : 
-
 class WiFindMyFriendsApp(app.App):
 
     def __init__(self):
