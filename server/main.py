@@ -1,7 +1,6 @@
 # main.py
 
 import requests
-import socket
 import datetime
 import fastapi
 import fastapi.responses
@@ -18,7 +17,7 @@ from data import DataBaseSession
 import uvicorn
 import asyncio
 from constants import MASTER_API_TOKEN
-from utils import estimate_location
+from utils import estimate_location, get_local_ip
 
 from schemas import (
     DeviceSummaryInfoResponseSchema,
@@ -148,20 +147,7 @@ app.add_middleware(
 # TODO: No static files yet.
 # app.mount("/", fastapi.staticfiles.StaticFiles(directory="static", html = True), name="static")
 
-def get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(('8.8.8.8', 80)) # Doesn't have to be reachable
-        local_ip = s.getsockname()[0]
-    except Exception:
-        local_ip = '127.0.0.1'
-    finally:
-        s.close()
-    return local_ip
 
-def get_external_ip():
-    public_ip = requests.get('https://api.ipify.org').text
-    print("Public IP Address:", public_ip)
 
 KEY_SERVER_URL = "server_url"
 KEY_SSID_FILTER = "ssid_filter"
@@ -179,7 +165,7 @@ def synchronise_config_server_url():
     local_url = f"http://{get_local_ip()}:{PORT}"
 
     if remote_url != local_url:
-        print("mismatch! updating via git.")
+        print(f"URL mismatch [{remote_url}] vs [{local_url}]. Attempting to update...")
         user_folder_path = os.path.expanduser('~')
         repo_folder_path = os.path.join(user_folder_path, "repos", "config")
         try:
@@ -203,8 +189,8 @@ def synchronise_config_server_url():
             subprocess.run("git pull", cwd=repo_folder_path)
             subprocess.run(f"git commit -am \"Server updating IP address.\"", cwd=repo_folder_path)
             subprocess.run("git push", cwd=repo_folder_path)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"An error occured trying to update the config server IP address. {e}")
 
 async def main():
     synchronise_config_server_url()

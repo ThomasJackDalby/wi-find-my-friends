@@ -16,21 +16,26 @@ def estimate_location(signals: list[tuple[float, float, float]]) -> tuple[float,
     """
     Estimates the position based on signals received.
 
+    Args:
+        signals (list[tuple[float, float, float]]): The signals used for the triangulation. Each tuple is
+        comprises the x, and y position of the signal source (anchor), followed by the rssi strengh 
+
     Returns:
         tuple[float, float]: A tuple of the x, y position (e.g. (1.23, 4.56))
     """
-    anchors = np.array([[s[0], s[1]] for s in signals])
+    signal_positions = np.array([[s[0], s[1]] for s in signals])
+    signal_distances = np.array([rssi_to_dist(s[2]) for s in signals])
 
     def localization_loss(position, anchors, measured_distances):
         hypothesized_distances = np.linalg.norm(anchors - position, axis=1)
         residuals = hypothesized_distances - measured_distances
         return np.sum(residuals**2)
 
-    initial_guess = np.mean(anchors, axis=0)
+    initial_guess = np.mean(signal_positions, axis=0)
     result = minimize(
         fun=localization_loss,
         x0=initial_guess,
-        args=(anchors, np.array([s[2] for s in signals])),
+        args=(signal_positions, signal_distances),
         method='BFGS' # Broyden–Fletcher–Goldfarb–Shanno algorithm
     )
     return result.x
