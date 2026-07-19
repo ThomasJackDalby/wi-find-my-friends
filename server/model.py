@@ -43,8 +43,14 @@ class DeviceLocation(Base):
     date_time: Mapped[datetime] = mapped_column(DateTime)
     position_x = mapped_column(Float, nullable=True)
     position_y = mapped_column(Float, nullable=True)
-    cell_x = mapped_column(Integer, nullable=True)
-    cell_y = mapped_column(Integer, nullable=True)
 
     device: Mapped["Device"] = relationship(back_populates="locations")
     access_point_signals: Mapped[list["AccessPointSignal"]] = relationship(back_populates="device_location")
+
+class NamedLocation:
+    __tablename__ = "named_locations"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    position_x = mapped_column(Float, nullable=True)
+    position_y = mapped_column(Float, nullable=True)
+    name = mapped_column(String(64))

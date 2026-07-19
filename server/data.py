@@ -10,7 +10,7 @@ import string
 import random
 from sqlalchemy import select
 from typing import Optional
-from model import Base, Device, DeviceLocation, AccessPoint, AccessPointSignal
+from model import Base, Device, DeviceLocation, AccessPoint, AccessPointSignal, NamedLocation
 
 logger = logging.getLogger("wifind-my-friends")
 
@@ -139,3 +139,8 @@ class DataBaseSession:
         self._session.add(access_point)
         self._session.commit()
         return access_point
+    
+    # named locations
+
+    def get_named_locations(self) -> list[NamedLocation]:
+        return list(self._session.scalars(select(NamedLocation)).all())

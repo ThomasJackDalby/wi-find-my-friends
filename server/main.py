@@ -26,6 +26,8 @@ from schemas import (
     PostUpdateRequestSchema,
     AccessPointInfoResponseSchema,
     AccessPointEditRequestSchema,
+    NamedLocationResponseSchema,
+    AccessPointCreateRequestSchema
     )
 
 KEY_SERVER_URL = "server_url"
@@ -71,6 +73,18 @@ def get_device_location(device_id: int) -> DeviceDetailedInfoResponseSchema:
             ) for loc in device.locations]
         )
 
+# -- named locations
+
+@public.get("/locations", status_code=200)
+def get_devices() -> list[NamedLocationResponseSchema]:
+    with DataBaseSession() as db:
+        return [DeviceSummaryInfoResponseSchema(
+            id = device.id,
+            name = device.name
+        ) for device in db.get_named_locations()]
+
+# -- access-points
+
 @public.get("/access-points", status_code=200)
 def get_access_points():
         with DataBaseSession() as db:
@@ -93,6 +107,19 @@ def put_access_points(access_point_id: int, request: AccessPointEditRequestSchem
             if request.position_x is not None: access_point.position_x = request.position_x
             if request.position_y is not None: access_point.position_y = request.position_y
             db._session.commit()
+
+def post_access_points(request: AccessPointCreateRequestSchema):
+    with DataBaseSession() as db:
+        access_point = db.get_access_point_with_bssid(request.bssid)
+        if access_point is not None: raise fastapi.HTTPException(400, f"Access_point already exists.")
+
+        if request.ssid is None: request.ssid = "Unknown"
+
+        access_point = db.add_access_point(request.bssid, request.ssid)
+        if request.name is not None: access_point.name = request.name
+        if request.position_x is not None: access_point.position_x = request.position_x
+        if request.position_y is not None: access_point.position_y = request.position_y
+        db._session.commit()
 
 @public.post("/update", status_code=201)
 def post_update(request: PostUpdateRequestSchema):

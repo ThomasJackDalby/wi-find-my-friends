@@ -41,3 +41,15 @@ class AccessPointEditRequestSchema(pydantic.BaseModel):
     ssid: str | None
     position_x: float | None
     position_y: float | None
+
+class AccessPointCreateRequestSchema(pydantic.BaseModel):
+    bssid: str
+    name: str | None
+    ssid: str | None
+    position_x: float | None
+    position_y: float | None
+
+class NamedLocationResponseSchema(pydantic.BaseModel):
+    name: str | None
+    position_x: float | None
+    position_y: float | None
