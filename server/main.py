@@ -108,6 +108,7 @@ def put_access_points(access_point_id: int, request: AccessPointEditRequestSchem
             if request.position_y is not None: access_point.position_y = request.position_y
             db._session.commit()
 
+@public.post("/access-points", status_code=201)
 def post_access_points(request: AccessPointCreateRequestSchema):
     with DataBaseSession() as db:
         access_point = db.get_access_point_with_bssid(request.bssid)
