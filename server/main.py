@@ -86,12 +86,8 @@ def get_devices() -> list[NamedLocationResponseSchema]:
 # -- access-points
 
 @public.get("/access-points", status_code=200)
-def get_access_points(position: bool | None):
+def get_access_points():
         access_points = list(db.get_access_points())
-        if position is not None:
-            if position: access_points = filter(lambda ap: ap.position_x is not None and ap.position_y is not None, access_points)
-            else: access_points = filter(lambda ap: ap.position_x is None or ap.position_y is None, access_points)
-
         with DataBaseSession() as db:
             return [AccessPointInfoResponseSchema(
                 id = access_point.id,
