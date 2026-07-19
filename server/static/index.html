@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recreated Map with Custom Layer</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
+
+    <style>
+        /* Give the map container a explicit width and height */
+        #map {
+            width: 100%;
+            height: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Recreated Map Instance</h1>
+    <p>This map uses the tile layer source extracted from the target site, allowing us to safely inject our own custom layers on top.</p>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+            crossorigin=""></script>
+
+    <script>
+        // 1. Initialize the map and set its default view (Latitude, Longitude, Zoom Level)
+        // Coordinates here point to London as an example
+        const map = L.map('map').setView([51.505, -0.09], 13);
+
+        // 2. Define the "scraped" Tile URL from the external website
+        // (Replace this URL string with the network tile URL you found on their site)
+        const scrapedTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+        // 3. Add the background tile layer to your map instance
+        L.tileLayer(scrapedTileUrl, {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // 4. ADD YOUR CUSTOM LAYERS HERE 👇
+        
+        // Example A: Adding a standard Marker
+        const customMarker = L.marker([51.5, -0.09]).addTo(map);
+        customMarker.bindPopup("<b>Hello!</b><br>This is my custom injected layer.").openPopup();
+
+        // Example B: Adding a semi-transparent Circle area
+        const customCircle = L.circle([51.508, -0.11], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.3,
+            radius: 500 // Radius in meters
+        }).addTo(map);
+        customCircle.bindPopup("Custom delivery zone boundary.");
+        
+    </script>
+</body>
+</html>

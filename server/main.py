@@ -27,6 +27,10 @@ from schemas import (
     AccessPointInfoResponseSchema,
     AccessPointEditRequestSchema,
     )
+
+KEY_SERVER_URL = "server_url"
+KEY_SSID_FILTER = "ssid_filter"
+KEY_SCAN_INTERVAL = "scan_interval"
 CONFIG_GIT_REPO_URL = "https://github.com/ThomasJackDalby/config.git"
 CONFIG_FILE_URL = f"https://thomasjackdalby.github.io/config/wifind-my-friends/config.json"
 PORT = 8000
@@ -140,55 +144,7 @@ app.add_middleware(
 # TODO: No static files yet.
 # app.mount("/", fastapi.staticfiles.StaticFiles(directory="static", html = True), name="static")
 
-KEY_SERVER_URL = "server_url"
-KEY_SSID_FILTER = "ssid_filter"
-KEY_SCAN_INTERVAL = "scan_interval"
-
-def synchronise_config_server_url():
-    # get current url
-    response = requests.get(CONFIG_FILE_URL)
-    config = response.json()
-    if KEY_SERVER_URL not in config:
-        print(f"Expected key [{KEY_SERVER_URL}] in remote config (not found).")
-        return
-
-    remote_url = config[KEY_SERVER_URL]
-    local_url = f"http://{get_local_ip()}:{PORT}"
-
-    if remote_url != local_url:
-        print(f"URL mismatch [{remote_url}] vs [{local_url}]. Attempting to update...")
-        try:
-            # create the target folder
-            user_folder_path = os.path.expanduser('~')
-            repos_folder_path = os.path.join(user_folder_path, "repos")
-            repo_folder_path = os.path.join(repos_folder_path, "config")
-            os.mkdir(repo_folder_path)
-
-            # clone the repo
-            subprocess.run(f"git clone {CONFIG_GIT_REPO_URL} {repo_folder_path}")
-
-            # update the config file contained
-            config_file_path = os.path.join(repo_folder_path, "wifind-my-friends", "config.json")
-            with open(config_file_path, "r") as file:
-                current_config = json.load(file)
-            
-            # update the config with correct url
-            current_config.update({ KEY_SERVER_URL : local_url })
-
-            # save back to the repo
-            with open(config_file_path, "w") as file:
-                json.dump(current_config, file)
-
-            # commit/push
-            subprocess.run("git fetch -a", cwd=repo_folder_path)
-            subprocess.run("git pull", cwd=repo_folder_path)
-            subprocess.run(f"git commit -am \"Server updating IP address.\"", cwd=repo_folder_path)
-            subprocess.run("git push", cwd=repo_folder_path)
-        except Exception as e:
-            print(f"An error occured trying to update the config server IP address. {e}")
-
 async def main():
-    synchronise_config_server_url()
     config = uvicorn.Config(app=app, host="0.0.0.0", port=PORT, log_config=None)
     server = uvicorn.Server(config=config)
     await server.serve()
